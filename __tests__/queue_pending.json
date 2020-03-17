@@ -1,0 +1,32 @@
+{
+  "_class": "hudson.model.Queue$BuildableItem",
+  "actions": [
+    {
+      "_class": "hudson.model.CauseAction",
+      "causes": [
+        {
+          "_class": "hudson.model.Cause$UserIdCause",
+          "shortDescription": "Started by user Russell Sim",
+          "userId": "rsim@zendesk.com",
+          "userName": "Russell Sim"
+        }
+      ]
+    }
+  ],
+  "blocked": false,
+  "buildable": true,
+  "id": 8175,
+  "inQueueSince": 1584611920019,
+  "params": "",
+  "stuck": false,
+  "task": {
+    "_class": "hudson.model.FreeStyleProject",
+    "name": "trigger-test",
+    "url": "https://localhost:8080/job/trigger-test/",
+    "color": "blue"
+  },
+  "url": "queue/item/8175/",
+  "why": "",
+  "buildableStartMilliseconds": 1584611920025,
+  "pending": false
+}

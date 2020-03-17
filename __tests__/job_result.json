@@ -1,0 +1,80 @@
+{
+  "_class": "hudson.model.FreeStyleBuild",
+  "actions": [
+    {
+      "_class": "hudson.model.CauseAction",
+      "causes": [
+        {
+          "_class": "hudson.model.Cause$UserIdCause",
+          "shortDescription": "Started by user FOO BAR",
+          "userId": "foo",
+          "userName": "FOO BAR"
+        }
+      ]
+    },
+    {
+      "_class": "com.cloudbees.plugins.deployer.DeployNowRunAction",
+      "oneClickDeployPossible": false,
+      "oneClickDeployReady": false,
+      "oneClickDeployValid": false
+    },
+    {
+    },
+    {
+      "_class": "jenkins.metrics.impl.TimeInQueueAction",
+      "blockedDurationMillis": 0,
+      "blockedTimeMillis": 0,
+      "buildableDurationMillis": 23275,
+      "buildableTimeMillis": 23275,
+      "buildingDurationMillis": 63337,
+      "executingTimeMillis": 63337,
+      "executorUtilization": 1.0,
+      "subTaskCount": 0,
+      "waitingDurationMillis": 0,
+      "waitingTimeMillis": 0
+    },
+    {
+    },
+    {
+    },
+    {
+    },
+    {
+    },
+    {
+      "_class": "org.jenkinsci.plugins.buildenvironment.actions.BuildEnvironmentBuildAction"
+    },
+    {
+    },
+    {
+    }
+  ],
+  "artifacts": [
+
+  ],
+  "building": false,
+  "description": null,
+  "displayName": "#4",
+  "duration": 63337,
+  "estimatedDuration": 42201,
+  "executor": null,
+  "fullDisplayName": "trigger-test #4",
+  "id": "4",
+  "keepLog": false,
+  "number": 4,
+  "queueId": 7920,
+  "result": "SUCCESS",
+  "timestamp": 1584610117105,
+  "url": "https://localhost:8080/job/trigger-test/4/",
+  "builtOn": "worker",
+  "changeSet": {
+    "_class": "hudson.scm.EmptyChangeLogSet",
+    "items": [
+
+    ],
+    "kind": null
+  },
+  "culprits": [
+
+  ]
+}
