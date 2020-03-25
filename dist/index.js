@@ -80,17 +80,6 @@ const node_fetch_1 = __importDefault(__webpack_require__(169));
 const base64_async_1 = __importDefault(__webpack_require__(813));
 const https_1 = __importDefault(__webpack_require__(211));
 const path_1 = __importDefault(__webpack_require__(622));
-function wait(milliseconds) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise(resolve => {
-            if (isNaN(milliseconds)) {
-                throw new Error('milliseconds not a number');
-            }
-            setTimeout(() => resolve('done!'), milliseconds);
-        });
-    });
-}
-exports.wait = wait;
 var BuildResult;
 (function (BuildResult) {
     BuildResult["SUCCESS"] = "SUCCESS";
@@ -99,21 +88,20 @@ var BuildResult;
     BuildResult["ABORTED"] = "ABORTED";
     BuildResult["NOT_BUILT"] = "NOT_BUILT";
 })(BuildResult = exports.BuildResult || (exports.BuildResult = {}));
-;
 class JenkinsClient {
-    constructor(base_url, username, password, cert, key) {
-        this.base_url = base_url;
+    constructor(baseUrl, username, password, cert, key) {
+        this.baseUrl = baseUrl;
         this.username = username;
         this.password = password;
         this.cert = cert;
         this.key = key;
     }
     sanitizeUrl(url) {
-        const base_url = new URL(this.base_url);
-        const new_url = new URL(url);
-        new_url.host = base_url.host;
-        new_url.protocol = base_url.protocol;
-        return new_url.toString();
+        const baseUrl = new URL(this.baseUrl);
+        const newUrl = new URL(url);
+        newUrl.host = baseUrl.host;
+        newUrl.protocol = baseUrl.protocol;
+        return newUrl.toString();
     }
     authorization() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -128,15 +116,14 @@ class JenkinsClient {
                 body: JSON.stringify(parameters),
                 agent: new https_1.default.Agent({
                     cert: this.cert,
-                    key: this.key,
+                    key: this.key
                 }),
                 headers: {
-                    'Authorization': yield this.authorization(),
+                    Authorization: yield this.authorization(),
                     'Content-Type': 'application/json'
                 }
             });
             if (res.status >= 400) {
-                console.log(yield res.text());
                 throw new Error(`Response: ${res.status} ${res.statusText}`);
             }
             return res;
@@ -144,28 +131,26 @@ class JenkinsClient {
     }
     get(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            const resolved_url = new URL(url, this.base_url);
             const res = yield node_fetch_1.default(this.sanitizeUrl(url), {
                 method: 'get',
                 agent: new https_1.default.Agent({
                     cert: this.cert,
-                    key: this.key,
+                    key: this.key
                 }),
                 headers: {
-                    'Authorization': yield this.authorization(),
+                    Authorization: yield this.authorization(),
                     'Content-Type': 'application/json'
                 }
             });
             if (res.status >= 400) {
-                console.log(yield res.text());
                 throw new Error(`Response: ${res.status} ${res.statusText}`);
             }
             return res;
         });
     }
-    build(job_url, parameters) {
+    build(jobUrl, parameters) {
         return __awaiter(this, void 0, void 0, function* () {
-            const url = new URL(path_1.default.join(job_url, 'build'), this.base_url);
+            const url = new URL(path_1.default.join(jobUrl, 'build'), this.baseUrl);
             const res = yield this.post(url.toString(), parameters);
             core.debug(`Response: ${res.status} ${res.statusText}`);
             const location = res.headers.get('location');
@@ -175,58 +160,58 @@ class JenkinsClient {
             return this.sanitizeUrl(location);
         });
     }
-    getQueueItem(item_url) {
+    getQueueItem(itemUrl) {
         return __awaiter(this, void 0, void 0, function* () {
-            const url = new URL('api/json', item_url);
+            const url = new URL('api/json', itemUrl);
             const res = yield this.get(url.toString());
             return yield res.json();
         });
     }
     sleep(millis) {
-        return new Promise(resolve => setTimeout(resolve, millis));
-    }
-    getQueuedItemJobUrl(item_url) {
         return __awaiter(this, void 0, void 0, function* () {
-            let qi = yield this.getQueueItem(item_url);
-            function isProcessing(queue_item) {
-                core.debug("Waiting for job to execute");
-                if (qi.buildable == true)
+            return new Promise(resolve => setTimeout(resolve, millis));
+        });
+    }
+    getQueuedItemJobUrl(itemUrl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let qi = yield this.getQueueItem(itemUrl);
+            function isProcessing(queueItem) {
+                console.log('Waiting for job to execute');
+                if (qi.buildable === true)
                     return true;
-                if (queue_item.executable && queue_item.executable.url)
+                if (queueItem.executable && queueItem.executable.url)
                     return false;
                 return true;
             }
             while (isProcessing(qi)) {
                 yield this.sleep(2000);
-                qi = yield this.getQueueItem(item_url);
+                qi = yield this.getQueueItem(itemUrl);
             }
-            ;
-            const build_url = qi.executable && qi.executable.url;
-            if (build_url == undefined)
+            const buildUrl = qi.executable && qi.executable.url;
+            if (buildUrl === undefined)
                 throw new Error("Can't find build url");
-            return this.sanitizeUrl(build_url);
+            return this.sanitizeUrl(buildUrl);
         });
     }
-    getBuild(build_url) {
+    getBuild(buildUrl) {
         return __awaiter(this, void 0, void 0, function* () {
-            const res = yield this.get((new URL('api/json', build_url).toString()));
+            const res = yield this.get(new URL('api/json', buildUrl).toString());
             return yield res.json();
         });
     }
-    getCompletedBulid(build_url) {
+    getCompletedBulid(buildUrl) {
         return __awaiter(this, void 0, void 0, function* () {
-            let build = yield this.getBuild(build_url);
-            function isProcessing(build) {
-                core.debug("Waiting for job to complete");
-                if (!build.building && build.result)
+            let build = yield this.getBuild(buildUrl);
+            function isProcessing(b) {
+                console.log('Waiting for job to complete');
+                if (!b.building && b.result)
                     return false;
                 return true;
             }
             while (isProcessing(build)) {
                 yield this.sleep(2000);
-                build = yield this.getBuild(build_url);
+                build = yield this.getBuild(buildUrl);
             }
-            ;
             return build;
         });
     }
@@ -2341,9 +2326,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(830));
 const jenkins_1 = __webpack_require__(90);
-function parse_parameters() {
+function parseParameters() {
     const jp = core.getInput('job_parameters');
-    if (typeof jp != "string" || jp == "") {
+    if (typeof jp !== 'string' || jp === '') {
         return {};
     }
     else {
@@ -2353,32 +2338,33 @@ function parse_parameters() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const jenkins_url = core.getInput('jenkins_url', { required: true });
-            core.debug(`Jenkins URL: ${jenkins_url}`);
+            const jenkinsUrl = core.getInput('jenkins_url', { required: true });
+            core.debug(`Jenkins URL: ${jenkinsUrl}`);
             const username = core.getInput('username', { required: true });
             const password = core.getInput('password', { required: true });
-            const job_url = core.getInput('job_url', { required: true });
-            core.debug(`Job URL: ${job_url}`);
-            const job_parameters = parse_parameters();
-            core.debug(`Job Parameters: ${job_parameters}`);
-            const client_cert = core.getInput('client_cert', { required: true });
-            const client_key = core.getInput('client_key', { required: true });
-            const client = new jenkins_1.JenkinsClient(jenkins_url, username, password, client_cert, client_key);
-            const item_url = yield client.build(job_url, job_parameters);
-            core.debug(`Item URL: ${item_url}`);
-            const build_url = yield client.getQueuedItemJobUrl(item_url);
-            core.debug(`Build URL: ${build_url}`);
-            const build = yield client.getCompletedBulid(build_url);
+            const jobUrl = core.getInput('job_url', { required: true });
+            core.debug(`Job URL: ${jobUrl}`);
+            const jobParameters = parseParameters();
+            core.debug(`Job Parameters: ${jobParameters}`);
+            const clientCert = core.getInput('client_cert', { required: true });
+            const clientKey = core.getInput('client_key', { required: true });
+            const client = new jenkins_1.JenkinsClient(jenkinsUrl, username, password, clientCert, clientKey);
+            console.log("Submitting build");
+            const itemUrl = yield client.build(jobUrl, jobParameters);
+            console.log(`Build Queue Item URL: ${itemUrl}`);
+            const buildUrl = yield client.getQueuedItemJobUrl(itemUrl);
+            console.log(`Build URL: ${buildUrl}`);
+            const build = yield client.getCompletedBulid(buildUrl);
             if (build.result) {
                 core.setOutput('build_result', build.result.toString());
             }
-            core.setOutput('build_url', build_url);
-            if (build.result != jenkins_1.BuildResult.SUCCESS) {
+            core.setOutput('build_url', buildUrl);
+            if (build.result !== jenkins_1.BuildResult.SUCCESS) {
                 if (build.result) {
                     core.setFailed(build.result.toString());
                 }
                 else {
-                    core.setFailed("Error no build result");
+                    core.setFailed('Error no build result');
                 }
             }
         }
