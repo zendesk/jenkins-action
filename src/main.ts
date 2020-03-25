@@ -35,10 +35,12 @@ async function run(): Promise<void> {
       clientCert,
       clientKey
     )
+
+    console.log("Submitting build")
     const itemUrl = await client.build(jobUrl, jobParameters)
-    core.debug(`Item URL: ${itemUrl}`)
+    console.log(`Build Queue Item URL: ${itemUrl}`)
     const buildUrl = await client.getQueuedItemJobUrl(itemUrl)
-    core.debug(`Build URL: ${buildUrl}`)
+    console.log(`Build URL: ${buildUrl}`)
     const build = await client.getCompletedBulid(buildUrl)
 
     if (build.result) {

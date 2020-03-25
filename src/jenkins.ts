@@ -133,7 +133,7 @@ export class JenkinsClient {
     let qi: QueueItem = await this.getQueueItem(itemUrl)
 
     function isProcessing(queueItem: QueueItem): boolean {
-      core.debug('Waiting for job to execute')
+      console.log('Waiting for job to execute')
       if (qi.buildable === true) return true
       if (queueItem.executable && queueItem.executable.url) return false
       return true
@@ -156,7 +156,7 @@ export class JenkinsClient {
     let build: Build = await this.getBuild(buildUrl)
 
     function isProcessing(b: Build): boolean {
-      core.debug('Waiting for job to complete')
+      console.log('Waiting for job to complete')
       if (!b.building && b.result) return false
       return true
     }
