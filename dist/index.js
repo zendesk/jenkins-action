@@ -88,7 +88,12 @@ var BuildResult;
     BuildResult["ABORTED"] = "ABORTED";
     BuildResult["NOT_BUILT"] = "NOT_BUILT";
 })(BuildResult = exports.BuildResult || (exports.BuildResult = {}));
-class JenkinsClient {
+function sleep(millis) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise(resolve => setTimeout(resolve, millis));
+    });
+}
+class JenkinsHTTPClient {
     constructor(baseUrl, username, password, cert, key) {
         this.baseUrl = baseUrl;
         this.username = username;
@@ -148,28 +153,59 @@ class JenkinsClient {
             return res;
         });
     }
+}
+class JenkinsLogReader {
+    constructor(baseUrl, username, password, clientCert, clientKey, pollInterval = 1000) {
+        this.start = 0;
+        this.baseUrl = baseUrl;
+        this.url = new URL('logText/progressiveText', baseUrl);
+        this.pollInterval = pollInterval;
+        this.client = new JenkinsHTTPClient(baseUrl, username, password, clientCert, clientKey);
+    }
+    writeBody(response) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const text = yield response.text();
+            process.stdout.write(text);
+            return text.length;
+        });
+    }
+    read() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let response;
+            do {
+                response = yield this.client.get(this.url.toString());
+                this.start = Number(response.headers.get('x-text-size'));
+                this.url.search = `start=${this.start}`;
+                if ((yield this.writeBody(response)) === 0) {
+                    yield sleep(this.pollInterval);
+                }
+            } while (response.headers.get('x-more-data') === 'true');
+        });
+    }
+}
+exports.JenkinsLogReader = JenkinsLogReader;
+class JenkinsClient {
+    constructor(baseUrl, username, password, clientCert, clientKey) {
+        this.baseUrl = baseUrl;
+        this.client = new JenkinsHTTPClient(baseUrl, username, password, clientCert, clientKey);
+    }
     build(jobUrl, parameters) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = new URL(path_1.default.join(jobUrl, 'build'), this.baseUrl);
-            const res = yield this.post(url.toString(), parameters);
+            const res = yield this.client.post(url.toString(), parameters);
             core.debug(`Response: ${res.status} ${res.statusText}`);
             const location = res.headers.get('location');
             if (location == null) {
                 throw new Error('Location empty, lost track of the job');
             }
-            return this.sanitizeUrl(location);
+            return this.client.sanitizeUrl(location);
         });
     }
     getQueueItem(itemUrl) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = new URL('api/json', itemUrl);
-            const res = yield this.get(url.toString());
+            const res = yield this.client.get(url.toString());
             return yield res.json();
-        });
-    }
-    sleep(millis) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return new Promise(resolve => setTimeout(resolve, millis));
         });
     }
     getQueuedItemJobUrl(itemUrl) {
@@ -184,18 +220,18 @@ class JenkinsClient {
                 return true;
             }
             while (isProcessing(qi)) {
-                yield this.sleep(2000);
+                yield sleep(2000);
                 qi = yield this.getQueueItem(itemUrl);
             }
             const buildUrl = qi.executable && qi.executable.url;
             if (buildUrl === undefined)
                 throw new Error("Can't find build url");
-            return this.sanitizeUrl(buildUrl);
+            return this.client.sanitizeUrl(buildUrl);
         });
     }
     getBuild(buildUrl) {
         return __awaiter(this, void 0, void 0, function* () {
-            const res = yield this.get(new URL('api/json', buildUrl).toString());
+            const res = yield this.client.get(new URL('api/json', buildUrl).toString());
             return yield res.json();
         });
     }
@@ -209,7 +245,7 @@ class JenkinsClient {
                 return true;
             }
             while (isProcessing(build)) {
-                yield this.sleep(2000);
+                yield sleep(2000);
                 build = yield this.getBuild(buildUrl);
             }
             return build;
@@ -2354,6 +2390,8 @@ function run() {
             console.log(`Build Queue Item URL: ${itemUrl}`);
             const buildUrl = yield client.getQueuedItemJobUrl(itemUrl);
             console.log(`Build URL: ${buildUrl}`);
+            const logReader = new jenkins_1.JenkinsLogReader(buildUrl, username, password, clientCert, clientKey);
+            yield logReader.read();
             const build = yield client.getCompletedBulid(buildUrl);
             if (build.result) {
                 core.setOutput('build_result', build.result.toString());
