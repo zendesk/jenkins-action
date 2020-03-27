@@ -1,10 +1,21 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'jenkins-action'
+description: 'Trigger and monitor Jenkins Jobs'
+author: 'rsim@zendesk.com'
 inputs:
-  myInput:              # change this
-    description: 'input description here'
-    default: 'default value if applicable'
+  jenkinsUrl:
+    description: 'The URL to the Jenkins Server'
+  username:
+    description: 'The username to auth to Jenkins as'
+  password:
+    description: 'The password of the user to auth to Jenkins as'
+  jobUrl:
+    description: 'The URL to the job you want to trigger, e.g. job/jenkins-action'
+  jobParameters:
+    description: 'Parameters to pass to the job'
+  clientCert:
+    description: 'The certificate used to auth to your webserver'
+  clientKey:
+    description: 'The key used to auth to your webserver'
 runs:
   using: 'node12'
-  main: 'dist/index.js'
+  main: './dist/index.js'
