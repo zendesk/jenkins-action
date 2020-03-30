@@ -4,6 +4,21 @@ This action runs a Jenkins job and follows it to completion
 
 ## Usage
 
+*jenkinsUrl*: The URL to the Jenkins Server
+
+*username*: The username to auth to Jenkins as
+
+*password*: The password of the user to auth to Jenkins as
+
+*jobUrl*: The URL to the job you want to trigger, e.g. job/jenkins-action
+
+*jobParameters*: Parameters to pass to the job
+
+*clientCert*: The certificate used to auth to your webserver
+
+*clientKey*: The key used to auth to your webserver
+
+
 ```
 name: trigger jenkins job
 on: # rebuild any PRs and main branch changes
@@ -59,4 +74,3 @@ $ git push origin releases/v1
 Your action is now published! :rocket:
 
 See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
