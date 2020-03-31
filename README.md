@@ -4,19 +4,19 @@ This action runs a Jenkins job and follows it to completion
 
 ## Usage
 
-*jenkinsUrl*: The URL to the Jenkins Server
+**jenkinsUrl**: The URL to the Jenkins Server
 
-*username*: The username to auth to Jenkins as
+**username**: The username to auth to Jenkins as
 
-*password*: The password of the user to auth to Jenkins as
+**password**: The password of the user to auth to Jenkins as
 
-*jobUrl*: The URL to the job you want to trigger, e.g. job/jenkins-action
+**jobUrl**: The URL to the job you want to trigger, e.g. job/jenkins-action
 
-*jobParameters*: Parameters to pass to the job
+**jobParameters**: Parameters to pass to the job
 
-*clientCert*: The certificate used to auth to your webserver
+**clientCert**: The certificate used to auth to your webserver
 
-*clientKey*: The key used to auth to your webserver
+**clientKey**: The key used to auth to your webserver
 
 
 ```
