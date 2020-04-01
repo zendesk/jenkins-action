@@ -31,11 +31,13 @@ interface QueueItem {
   why?: string
   cancelled: boolean
   executable?: QueueItemExecutable
-
-  // [propName: string]: any;
 }
 
-export class JenkinsClient {
+async function sleep(millis: number): Promise<{}> {
+  return new Promise(resolve => setTimeout(resolve, millis))
+}
+
+class JenkinsHTTPClient {
   baseUrl: string
   username: string
   password: string
@@ -107,26 +109,91 @@ export class JenkinsClient {
     }
     return res
   }
+}
+
+export class JenkinsLogReader {
+  baseUrl: string
+  url: URL
+  pollInterval: number
+  start: number
+  client: JenkinsHTTPClient
+
+  constructor(
+    baseUrl: string,
+    username: string,
+    password: string,
+    clientCert: string,
+    clientKey: string,
+    pollInterval: number = 1000
+  ) {
+    this.start = 0
+    this.baseUrl = baseUrl
+    this.url = new URL('logText/progressiveText', baseUrl)
+    this.pollInterval = pollInterval
+    this.client = new JenkinsHTTPClient(
+      baseUrl,
+      username,
+      password,
+      clientCert,
+      clientKey
+    )
+  }
+
+  async writeBody(response: Response): Promise<number> {
+    const text: string = await response.text()
+    process.stdout.write(text)
+    return text.length
+  }
+
+  async read(): Promise<void> {
+    let response: Response
+    do {
+      response = await this.client.get(this.url.toString())
+      this.start = Number(response.headers.get('x-text-size'))
+      this.url.search = `start=${this.start}`
+      if (await this.writeBody(response) === 0) {
+        await sleep(this.pollInterval)
+      }
+    } while (response.headers.get('x-more-data') === 'true')
+  }
+}
+
+export class JenkinsClient {
+  baseUrl: string
+  client: JenkinsHTTPClient
+
+  constructor(
+    baseUrl: string,
+    username: string,
+    password: string,
+    clientCert: string,
+    clientKey: string
+  ) {
+    this.baseUrl = baseUrl
+    this.client = new JenkinsHTTPClient(
+      baseUrl,
+      username,
+      password,
+      clientCert,
+      clientKey
+    )
+  }
 
   async build(jobUrl: string, parameters: object): Promise<string> {
     const url = new URL(path.join(jobUrl, 'build'), this.baseUrl)
-    const res = await this.post(url.toString(), parameters)
+    const res = await this.client.post(url.toString(), parameters)
     core.debug(`Response: ${res.status} ${res.statusText}`)
     const location = res.headers.get('location')
     if (location == null) {
       throw new Error('Location empty, lost track of the job')
     }
-    return this.sanitizeUrl(location)
+    return this.client.sanitizeUrl(location)
   }
 
   async getQueueItem(itemUrl: string): Promise<QueueItem> {
     const url = new URL('api/json', itemUrl)
-    const res = await this.get(url.toString())
+    const res = await this.client.get(url.toString())
     return await res.json()
-  }
-
-  async sleep(millis: number): Promise<{}> {
-    return new Promise(resolve => setTimeout(resolve, millis))
   }
 
   async getQueuedItemJobUrl(itemUrl: string): Promise<string> {
@@ -139,17 +206,17 @@ export class JenkinsClient {
       return true
     }
     while (isProcessing(qi)) {
-      await this.sleep(2000)
+      await sleep(2000)
       qi = await this.getQueueItem(itemUrl)
     }
     const buildUrl = qi.executable && qi.executable.url
     if (buildUrl === undefined) throw new Error("Can't find build url")
 
-    return this.sanitizeUrl(buildUrl)
+    return this.client.sanitizeUrl(buildUrl)
   }
 
   async getBuild(buildUrl: string): Promise<Build> {
-    const res = await this.get(new URL('api/json', buildUrl).toString())
+    const res = await this.client.get(new URL('api/json', buildUrl).toString())
     return await res.json()
   }
   async getCompletedBulid(buildUrl: string): Promise<Build> {
@@ -161,7 +228,7 @@ export class JenkinsClient {
       return true
     }
     while (isProcessing(build)) {
-      await this.sleep(2000)
+      await sleep(2000)
       build = await this.getBuild(buildUrl)
     }
     return build

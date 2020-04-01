@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {JenkinsClient, BuildResult} from './jenkins'
+import {JenkinsClient, JenkinsLogReader, BuildResult} from './jenkins'
 
 interface JobParameters {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,6 +41,15 @@ async function run(): Promise<void> {
     console.log(`Build Queue Item URL: ${itemUrl}`)
     const buildUrl = await client.getQueuedItemJobUrl(itemUrl)
     console.log(`Build URL: ${buildUrl}`)
+
+    const logReader = new JenkinsLogReader(
+      buildUrl,
+      username,
+      password,
+      clientCert,
+      clientKey
+    )
+    await logReader.read()
     const build = await client.getCompletedBulid(buildUrl)
 
     if (build.result) {
